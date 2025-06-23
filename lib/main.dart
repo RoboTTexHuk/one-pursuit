@@ -339,7 +339,7 @@ class MainWebViewScreen extends StatefulWidget {
 class _MainWebViewScreenState extends State<MainWebViewScreen> {
   late InAppWebViewController _webController;
   bool _isLoading = false;
-  final String _mainUrl = "https://gameplay.ballpong.click";
+  final String _mainUrl = "https://getgame.pursuit-game.autos/";
 
   final DeviceManager _deviceManager = DeviceManager();
   final AppsFlyerManager _appsFlyerManager = AppsFlyerManager();
