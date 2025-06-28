@@ -105,7 +105,7 @@ class AttPermissionScreen extends StatelessWidget {
               width: 350,
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
               decoration: BoxDecoration(
-                color: Colors.blue[800],
+                color: Colors.black,
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
@@ -141,7 +141,7 @@ class AttPermissionScreen extends StatelessWidget {
                     child: ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
-                        foregroundColor: Colors.blue.shade700,
+                        foregroundColor: Colors.black,
                         padding: const EdgeInsets.symmetric(vertical: 14),
                         textStyle: const TextStyle(
                           fontSize: 16,
@@ -347,6 +347,12 @@ class _MainWebViewScreenState extends State<MainWebViewScreen> {
   @override
   void initState() {
     super.initState();
+    Future.delayed(const Duration(seconds: 9), () {
+      setState(() {
+        _showWebView = true;
+      });
+    });
+
     _startInit();
   }
 
@@ -579,11 +585,25 @@ class _MainWebViewScreenState extends State<MainWebViewScreen> {
         _percent = tick / (_delay * 10);
         if (_percent >= 1.0) {
           _percent = 1.0;
-          _showWebView = true;
+
           _timer.cancel();
         }
       });
     });
+  }
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      if (!_showWebView) {
+        setState(() {
+          _showWebView = true;
+        });
+      }
+      // Можно также перезагрузить WebView
+      if (_webController != null) {
+        _webController.reload();
+      }
+    }
   }
 
   @override
@@ -592,85 +612,90 @@ class _MainWebViewScreenState extends State<MainWebViewScreen> {
     return Scaffold(
       backgroundColor: Colors.black,
       body:
-           SafeArea(
-        child: Container(
-          color: Colors.black,
-          child: Stack(
-            children: [
-              InAppWebView(
-                initialSettings: InAppWebViewSettings(
-                  javaScriptEnabled: true,
-                  disableDefaultErrorPage: true,
-                  contentBlockers: getContentBlockers(),
-                  mediaPlaybackRequiresUserGesture: false,
-                  allowsInlineMediaPlayback: true,
-                  allowsPictureInPictureMediaPlayback: true,
-                  useOnDownloadStart: true,
-                  javaScriptCanOpenWindowsAutomatically: true,
-                ),
-                initialUrlRequest: URLRequest(url: WebUri(_mainUrl)),
-                onWebViewCreated: (controller) {
-                  _webController = controller;
-                  _webController.addJavaScriptHandler(
-                    handlerName: 'onServerResponse',
-                    callback: (args) {
-                      print("JS args: $args");
-                      return args.reduce((curr, next) => curr + next);
-                    },
-                  );
-                },
-                onLoadStart: (controller, url) {
-                  setState(() => _isLoading = true);
-                },
-                onLoadStop: (controller, url) async {
-                  await controller.evaluateJavascript(
-                    source: "console.log('Hello from JS!');",
-                  );
-                  await _sendDeviceDataToWeb();
-                },
-                shouldOverrideUrlLoading: (controller, navigationAction) async {
-                  return NavigationActionPolicy.ALLOW;
-                },
-              ),
-              if (_isLoading)
-                const Center(
-                  child: SizedBox(
-                    height: 80,
-                    width: 80,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 5,
-                      valueColor:
-                      AlwaysStoppedAnimation<Color>(Colors.deepPurple),
-                      backgroundColor: Colors.grey,
-                    ),
-                  ),
-                ),
-                  Visibility(
-                    visible: !_showWebView,
-                    child: Center(
-                    child: CircularPercentIndicator(
-                        radius: 60.0,
-                        lineWidth: 8.0,
-                        percent: _percent,
-                        animation: true,
-                        animateFromLastPercent: true,
-                        circularStrokeCap: CircularStrokeCap.round,
-                        progressColor: Colors.blueAccent,
-                        backgroundColor: Colors.grey.shade800,
-                        center: Text(
-                        "${(_percent * 100).round()}%",
-                        style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold),
-                        ),
-                        ),
-                        ),
-                  ),
-            ],
-          ),
-        ),
-
+           Container(
+             color: Colors.black,
+             child: Stack(
+               children: [
+                 InAppWebView(
+                   initialSettings: InAppWebViewSettings(
+                     javaScriptEnabled: true,
+                     disableDefaultErrorPage: true,
+                     contentBlockers: getContentBlockers(),
+                     mediaPlaybackRequiresUserGesture: false,
+                     allowsInlineMediaPlayback: true,
+                     allowsPictureInPictureMediaPlayback: true,
+                     useOnDownloadStart: true,
+                     javaScriptCanOpenWindowsAutomatically: true,
+                   ),
+                   initialUrlRequest: URLRequest(url: WebUri(_mainUrl)),
+                   onWebViewCreated: (controller) {
+                     _webController = controller;
+                     _webController.addJavaScriptHandler(
+                       handlerName: 'onServerResponse',
+                       callback: (args) {
+                         print("JS args: $args");
+                         return args.reduce((curr, next) => curr + next);
+                       },
+                     );
+                   },
+                   onLoadStart: (controller, url) {
+                     setState(() => _isLoading = true);
+                   },
+                   onLoadStop: (controller, url) async {
+                     await controller.evaluateJavascript(
+                       source: "console.log('Hello from JS!');",
+                     );
+                     await _sendDeviceDataToWeb();
+                   },
+                   shouldOverrideUrlLoading: (controller, navigationAction) async {
+                     return NavigationActionPolicy.ALLOW;
+                   },
+                 ),
+                 if (_isLoading)
+                   const Center(
+                     child: SizedBox(
+                       height: 80,
+                       width: 80,
+                       child: CircularProgressIndicator(
+                         strokeWidth: 5,
+                         valueColor:
+                         AlwaysStoppedAnimation<Color>(Colors.deepPurple),
+                         backgroundColor: Colors.grey,
+                       ),
+                     ),
+                   ),
+                 Visibility(
+                   visible: !_showWebView,
+                   child: SizedBox.expand( // занимает всё доступное пространство
+                     child: Container(
+                       color: Colors.black, // чёрный фон
+                       width: double.infinity,
+                       height: double.infinity,
+                       child: Center(
+                         child: CircularPercentIndicator(
+                           radius: 60.0,
+                           lineWidth: 8.0,
+                           percent: _percent,
+                           animation: true,
+                           animateFromLastPercent: true,
+                           circularStrokeCap: CircularStrokeCap.round,
+                           progressColor: Colors.blueAccent,
+                           backgroundColor: Colors.grey.shade800,
+                           center: Text(
+                             "${(_percent * 100).round()}%",
+                             style: const TextStyle(
+                               color: Colors.white,
+                               fontSize: 28,
+                               fontWeight: FontWeight.bold,
+                             ),
+                           ),
+                         ),
+                       ),
+                     ),
+                   ),
+                 ),
+               ],
+             ),
            ) );
   }
 }
