@@ -651,19 +651,7 @@ class _MainWebViewScreenState extends State<MainWebViewScreen> {
                      return NavigationActionPolicy.ALLOW;
                    },
                  ),
-                 if (_isLoading)
-                   const Center(
-                     child: SizedBox(
-                       height: 80,
-                       width: 80,
-                       child: CircularProgressIndicator(
-                         strokeWidth: 5,
-                         valueColor:
-                         AlwaysStoppedAnimation<Color>(Colors.deepPurple),
-                         backgroundColor: Colors.grey,
-                       ),
-                     ),
-                   ),
+
                  Visibility(
                    visible: !_showWebView,
                    child: SizedBox.expand( // занимает всё доступное пространство
