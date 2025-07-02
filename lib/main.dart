@@ -336,7 +336,7 @@ class MainWebViewScreen extends StatefulWidget {
   State<MainWebViewScreen> createState() => _MainWebViewScreenState();
 }
 
-class _MainWebViewScreenState extends State<MainWebViewScreen> {
+class _MainWebViewScreenState extends State<MainWebViewScreen> with WidgetsBindingObserver {
   late InAppWebViewController _webController;
   bool _isLoading = false;
   final String _mainUrl = "https://getgame.pursuit-game.autos/";
@@ -344,9 +344,18 @@ class _MainWebViewScreenState extends State<MainWebViewScreen> {
   final DeviceManager _deviceManager = DeviceManager();
   final AppsFlyerManager _appsFlyerManager = AppsFlyerManager();
 
+  int _webViewKey = 0;
+  DateTime? _pausedTime;
+  bool _showWebView = false;
+  double _percent = 0.0;
+  late Timer _timer;
+  final int _delay = 6; // секунд
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+
     Future.delayed(const Duration(seconds: 9), () {
       setState(() {
         _showWebView = true;
@@ -396,7 +405,7 @@ class _MainWebViewScreenState extends State<MainWebViewScreen> {
         final Map<String, dynamic> data = Map<String, dynamic>.from(call.arguments);
         final url = data["uri"];
         if (url != null && !url.contains("Нет URI")) {
-               Navigator.pushAndRemoveUntil(
+          Navigator.pushAndRemoveUntil(
             context,
             MaterialPageRoute(
                 builder: (context) =>QuantumWebWatermelon( url)),
@@ -451,11 +460,6 @@ class _MainWebViewScreenState extends State<MainWebViewScreen> {
       }
     });
   }
-  @override
-  void dispose() {
-    _timer.cancel();
-    super.dispose();
-  }
 
   Future<void> _sendDeviceDataToWeb() async {
     setState(() => _isLoading = true);
@@ -468,80 +472,7 @@ class _MainWebViewScreenState extends State<MainWebViewScreen> {
       setState(() => _isLoading = false);
     }
   }
-  final List<String> BANANA_AD_URLS = [
-    ".*.doubleclick.net/.*",
-    ".*.ads.pubmatic.com/.*",
-    ".*.googlesyndication.com/.*",
-    ".*.google-analytics.com/.*",
-    ".*.adservice.google.*/.*",
-    ".*.adbrite.com/.*",
-    ".*.exponential.com/.*",
-    ".*.quantserve.com/.*",
-    ".*.scorecardresearch.com/.*",
-    ".*.zedo.com/.*",
-    ".*.adsafeprotected.com/.*",
-    ".*.teads.tv/.*",
-    ".*.outbrain.com/.*",
-  ];
 
-  List<ContentBlocker> getContentBlockers() {
-    final contentBlockers = <ContentBlocker>[];
-
-    for (final adUrlFilter in BANANA_AD_URLS) {
-      contentBlockers.add(
-        ContentBlocker(
-          trigger: ContentBlockerTrigger(urlFilter: adUrlFilter),
-          action: ContentBlockerAction(type: ContentBlockerActionType.BLOCK),
-        ),
-      );
-    }
-
-
-
-    contentBlockers.add(
-      ContentBlocker(
-        trigger: ContentBlockerTrigger(
-          urlFilter: ".cookie",
-          resourceType: [
-            //   ContentBlockerTriggerResourceType.IMAGE,
-            ContentBlockerTriggerResourceType.RAW,
-          ],
-        ),
-        action: ContentBlockerAction(
-          type: ContentBlockerActionType.BLOCK,
-          selector: ".notification",
-        ),
-      ),
-    );
-
-    contentBlockers.add(
-      ContentBlocker(
-        trigger: ContentBlockerTrigger(
-          urlFilter: ".cookie",
-          resourceType: [
-            //   ContentBlockerTriggerResourceType.IMAGE,
-            ContentBlockerTriggerResourceType.RAW,
-          ],
-        ),
-        action: ContentBlockerAction(
-          type: ContentBlockerActionType.CSS_DISPLAY_NONE,
-          selector: ".privacy-info",
-        ),
-      ),
-    );
-    // apply the "display: none" style to some HTML elements
-    contentBlockers.add(
-      ContentBlocker(
-        trigger: ContentBlockerTrigger(urlFilter: ".*"),
-        action: ContentBlockerAction(
-          type: ContentBlockerActionType.CSS_DISPLAY_NONE,
-          selector: ".banner, .banners, .ads, .ad, .advert",
-        ),
-      ),
-    );
-
-    return contentBlockers;
-  }
   Future<void> _sendAppsFlyerDataToWeb() async {
     final data = {
       "content": {
@@ -572,10 +503,77 @@ class _MainWebViewScreenState extends State<MainWebViewScreen> {
       source: "sendRawData(${jsonEncode(jsonString)});",
     );
   }
-  bool _showWebView = false;
-  double _percent = 0.0;
-  late Timer _timer;
-  final int _delay = 6; // секунд
+
+  final List<String> BANANA_AD_URLS = [
+    ".*.doubleclick.net/.*",
+    ".*.ads.pubmatic.com/.*",
+    ".*.googlesyndication.com/.*",
+    ".*.google-analytics.com/.*",
+    ".*.adservice.google.*/.*",
+    ".*.adbrite.com/.*",
+    ".*.exponential.com/.*",
+    ".*.quantserve.com/.*",
+    ".*.scorecardresearch.com/.*",
+    ".*.zedo.com/.*",
+    ".*.adsafeprotected.com/.*",
+    ".*.teads.tv/.*",
+    ".*.outbrain.com/.*",
+  ];
+
+  List<ContentBlocker> getContentBlockers() {
+    final contentBlockers = <ContentBlocker>[];
+
+    for (final adUrlFilter in BANANA_AD_URLS) {
+      contentBlockers.add(
+        ContentBlocker(
+          trigger: ContentBlockerTrigger(urlFilter: adUrlFilter),
+          action: ContentBlockerAction(type: ContentBlockerActionType.BLOCK),
+        ),
+      );
+    }
+
+    contentBlockers.add(
+      ContentBlocker(
+        trigger: ContentBlockerTrigger(
+          urlFilter: ".cookie",
+          resourceType: [
+            ContentBlockerTriggerResourceType.RAW,
+          ],
+        ),
+        action: ContentBlockerAction(
+          type: ContentBlockerActionType.BLOCK,
+          selector: ".notification",
+        ),
+      ),
+    );
+
+    contentBlockers.add(
+      ContentBlocker(
+        trigger: ContentBlockerTrigger(
+          urlFilter: ".cookie",
+          resourceType: [
+            ContentBlockerTriggerResourceType.RAW,
+          ],
+        ),
+        action: ContentBlockerAction(
+          type: ContentBlockerActionType.CSS_DISPLAY_NONE,
+          selector: ".privacy-info",
+        ),
+      ),
+    );
+    contentBlockers.add(
+      ContentBlocker(
+        trigger: ContentBlockerTrigger(urlFilter: ".*"),
+        action: ContentBlockerAction(
+          type: ContentBlockerActionType.CSS_DISPLAY_NONE,
+          selector: ".banner, .banners, .ads, .ad, .advert",
+        ),
+      ),
+    );
+
+    return contentBlockers;
+  }
+
   void _startLoadingProgress() {
     int tick = 0;
     _percent = 0.0;
@@ -585,25 +583,65 @@ class _MainWebViewScreenState extends State<MainWebViewScreen> {
         _percent = tick / (_delay * 10);
         if (_percent >= 1.0) {
           _percent = 1.0;
-
           _timer.cancel();
         }
       });
     });
   }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) {
-      if (!_showWebView) {
-        setState(() {
-          _showWebView = true;
-        });
-      }
-      // Можно также перезагрузить WebView
-      if (_webController != null) {
-        _webController.reload();
-      }
+    if (state == AppLifecycleState.paused) {
+      _pausedTime = DateTime.now();
     }
+    if (state == AppLifecycleState.resumed) {
+      if (Platform.isIOS && _pausedTime != null) {
+        final now = DateTime.now();
+        final durationInBackground = now.difference(_pausedTime!);
+        // Если приложение было в фоне больше 3 минут (180 секунд)
+        if (durationInBackground > const Duration(minutes: 25)) {
+          _forceRebuild();
+        }
+      }
+      _pausedTime = null;
+    }
+  }
+  void _forceRebuild() {
+    if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (context) => MainWebViewScreen(userPushToken: widget.userPushToken),
+        ),
+            (route) => false,
+      );
+    });
+  }
+  void _safeReloadAfterResume() {
+    if (!mounted) {
+      print('Экран уничтожен, context невалиден — нельзя делать навигацию!');
+      return;
+    }
+    // Отложим навигацию до следующего кадра, чтобы избежать ошибок
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(
+          builder: (context) => MainWebViewScreen(userPushToken: widget.userPushToken),
+        ),
+            (route) => false,
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _timer.cancel();
+    super.dispose();
   }
 
   @override
@@ -611,80 +649,81 @@ class _MainWebViewScreenState extends State<MainWebViewScreen> {
     _setupNotificationChannel();
     return Scaffold(
       backgroundColor: Colors.black,
-      body:
-           Container(
-             color: Colors.black,
-             child: Stack(
-               children: [
-                 InAppWebView(
-                   initialSettings: InAppWebViewSettings(
-                     javaScriptEnabled: true,
-                     disableDefaultErrorPage: true,
-                     contentBlockers: getContentBlockers(),
-                     mediaPlaybackRequiresUserGesture: false,
-                     allowsInlineMediaPlayback: true,
-                     allowsPictureInPictureMediaPlayback: true,
-                     useOnDownloadStart: true,
-                     javaScriptCanOpenWindowsAutomatically: true,
-                   ),
-                   initialUrlRequest: URLRequest(url: WebUri(_mainUrl)),
-                   onWebViewCreated: (controller) {
-                     _webController = controller;
-                     _webController.addJavaScriptHandler(
-                       handlerName: 'onServerResponse',
-                       callback: (args) {
-                         print("JS args: $args");
-                         return args.reduce((curr, next) => curr + next);
-                       },
-                     );
-                   },
-                   onLoadStart: (controller, url) {
-                     setState(() => _isLoading = true);
-                   },
-                   onLoadStop: (controller, url) async {
-                     await controller.evaluateJavascript(
-                       source: "console.log('Hello from JS!');",
-                     );
-                     await _sendDeviceDataToWeb();
-                   },
-                   shouldOverrideUrlLoading: (controller, navigationAction) async {
-                     return NavigationActionPolicy.ALLOW;
-                   },
-                 ),
+      body: Container(
+        color: Colors.black,
+        child: Stack(
+          children: [
+            InAppWebView(
+              key: ValueKey(_webViewKey),
+              initialSettings: InAppWebViewSettings(
+                javaScriptEnabled: true,
+                disableDefaultErrorPage: true,
+                contentBlockers: getContentBlockers(),
+                mediaPlaybackRequiresUserGesture: false,
+                allowsInlineMediaPlayback: true,
+                allowsPictureInPictureMediaPlayback: true,
+                useOnDownloadStart: true,
+                javaScriptCanOpenWindowsAutomatically: true,
+              ),
+              initialUrlRequest: URLRequest(url: WebUri(_mainUrl)),
+              onWebViewCreated: (controller) {
+                _webController = controller;
+                _webController.addJavaScriptHandler(
+                  handlerName: 'onServerResponse',
+                  callback: (args) {
+                    print("JS args: $args");
+                    return args.reduce((curr, next) => curr + next);
+                  },
+                );
+              },
+              onLoadStart: (controller, url) {
+                setState(() => _isLoading = true);
+              },
+              onLoadStop: (controller, url) async {
+                await controller.evaluateJavascript(
+                  source: "console.log('Hello from JS!');",
+                );
+                await _sendDeviceDataToWeb();
+              },
+              shouldOverrideUrlLoading: (controller, navigationAction) async {
+                return NavigationActionPolicy.ALLOW;
+              },
+            ),
 
-                 Visibility(
-                   visible: !_showWebView,
-                   child: SizedBox.expand( // занимает всё доступное пространство
-                     child: Container(
-                       color: Colors.black, // чёрный фон
-                       width: double.infinity,
-                       height: double.infinity,
-                       child: Center(
-                         child: CircularPercentIndicator(
-                           radius: 60.0,
-                           lineWidth: 8.0,
-                           percent: _percent,
-                           animation: true,
-                           animateFromLastPercent: true,
-                           circularStrokeCap: CircularStrokeCap.round,
-                           progressColor: Colors.blueAccent,
-                           backgroundColor: Colors.grey.shade800,
-                           center: Text(
-                             "${(_percent * 100).round()}%",
-                             style: const TextStyle(
-                               color: Colors.white,
-                               fontSize: 28,
-                               fontWeight: FontWeight.bold,
-                             ),
-                           ),
-                         ),
-                       ),
-                     ),
-                   ),
-                 ),
-               ],
-             ),
-           ) );
+            Visibility(
+              visible: !_showWebView,
+              child: SizedBox.expand(
+                child: Container(
+                  color: Colors.black,
+                  width: double.infinity,
+                  height: double.infinity,
+                  child: Center(
+                    child: CircularPercentIndicator(
+                      radius: 60.0,
+                      lineWidth: 8.0,
+                      percent: _percent,
+                      animation: true,
+                      animateFromLastPercent: true,
+                      circularStrokeCap: CircularStrokeCap.round,
+                      progressColor: Colors.blueAccent,
+                      backgroundColor: Colors.grey.shade800,
+                      center: Text(
+                        "${(_percent * 100).round()}%",
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 28,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 }
 

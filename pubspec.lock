@@ -21,10 +21,10 @@ packages:
     dependency: "direct main"
     description:
       name: appsflyer_sdk
-      sha256: "21de475f77a827dc063cbe2e76d058a4ac49838513ca78753e630cf568eb7254"
+      sha256: "08410cb4d677286027ce92f5e008bf47a88a9ce9fc36b3b6085770cf43e5f15f"
       url: "https://pub.dev"
     source: hosted
-    version: "6.16.2"
+    version: "6.16.21"
   async:
     dependency: transitive
     description:
@@ -238,14 +238,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.0.8"
-  flutter_lints:
-    dependency: "direct dev"
-    description:
-      name: flutter_lints
-      sha256: "5398f14efa795ffb7a33e9b6a08798b26a180edac4ad7db3f231e40f82ce11e1"
-      url: "https://pub.dev"
-    source: hosted
-    version: "5.0.0"
   flutter_test:
     dependency: "direct dev"
     description: flutter
@@ -304,14 +296,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "3.0.1"
-  lints:
-    dependency: transitive
-    description:
-      name: lints
-      sha256: c35bb79562d980e9a453fc715854e1ed39e24e7d0297a880ef54e17f9874a9d7
-      url: "https://pub.dev"
-    source: hosted
-    version: "5.1.1"
   matcher:
     dependency: transitive
     description:
