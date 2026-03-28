@@ -2072,48 +2072,8 @@ class _NcupHarborState extends State<NcupHarbor>
         ),
       ),
     );
-    contentBlockers.add(
-      ContentBlocker(
-        trigger: ContentBlockerTrigger(
-          urlFilter: ".*",
-          resourceType: <ContentBlockerTriggerResourceType>[
-            ContentBlockerTriggerResourceType.DOCUMENT,
-          ],
-          // при желании можно ограничить доменами:
-          // ifDomain: ["example.com", "www.example.com"],
-        ),
-        action: ContentBlockerAction(
-          type: ContentBlockerActionType.CSS_DISPLAY_NONE,
-          selector: """
-        .ot-sdk-container,
-        #onetrust-consent-sdk,
-        #onetrust-banner-sdk,
-        #onetrust-pc-sdk,
-        .onetrust-pc-dark-filter
-      """,
-        ),
-      ),
-    );
 
-    contentBlockers.add(
-      ContentBlocker(
-        trigger: ContentBlockerTrigger(
-          urlFilter: ".*", // можно сузить до конкретного домена через ifDomain
-          resourceType: <ContentBlockerTriggerResourceType>[
-            ContentBlockerTriggerResourceType.DOCUMENT,
-          ],
-        ),
-        action: ContentBlockerAction(
-          type: ContentBlockerActionType.CSS_DISPLAY_NONE,
-          selector: """
-        #onetrust-consent-sdk,
-        #onetrust-banner-sdk,
-        .onetrust-pc-dark-filter,
-        .ot-sdk-container
-      """,
-        ),
-      ),
-    );
+
     contentBlockers.add(
       ContentBlocker(
         trigger: ContentBlockerTrigger(
